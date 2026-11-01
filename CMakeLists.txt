@@ -19,8 +19,11 @@ target_include_directories(phys_lib INTERFACE
 )
 
 target_compile_options(phys_lib INTERFACE
-    $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall;-Wextra;-Wpedantic;-O3;-march=native>
+    $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall;-Wextra;-Wpedantic;-Wconversion;-O3;-march=native>
 )
 
-add_executable(phys_test main.cpp)
-target_link_libraries(phys_test PRIVATE phys_lib)
+add_executable(phys_sim main.cpp)
+target_link_libraries(phys_sim PRIVATE phys_lib)
+
+add_executable(phys_unit tests/vector2d_test.cpp)
+target_link_libraries(phys_unit PRIVATE phys_lib)

@@ -59,7 +59,7 @@ public:
         Scalar should not be equal to zero.*/
     vec2 operator/(const T scalar) const
     {
-        assert(scalar != 0.0f);
+        assert(scalar != T{0});
         return vec2(x / scalar, y / scalar);
     }
 
@@ -111,7 +111,7 @@ public:
     }
 
     //Performs cross product
-    friend T cross_prod(const vec2& v1, const vec2& v2)
+    friend T cross(const vec2& v1, const vec2& v2)
     {
         return (v1.x*v2.y) - (v1.y*v2.x);
     }
