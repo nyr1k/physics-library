@@ -9,6 +9,9 @@
 namespace physm {
 
 template <typename T>
+concept AllowedTypesVector = std::same_as<T, float> || std::same_as<T, int>;
+
+template <AllowedTypesVector T>
 class Vector2 {
 public:
     T x;
@@ -73,7 +76,8 @@ public:
     {
         if constexpr (std::is_floating_point_v<T>) 
             return equal_float(vec.x, vec.y);
-        return (x == vec.x && y == vec.y);
+        else
+            return (x == vec.x && y == vec.y);
     }
 
     //Calculates length of a vector
@@ -116,12 +120,14 @@ public:
     }
 
 private:
-    bool equal_float(float x2, float y2, float epsilon = 1e-6f) const
+    static inline float epsilon = 1e-6f;
+
+    bool equal_float(const T x2, const T y2) const
     {
         if (std::abs(x-x2) < epsilon && std::abs(y-y2) < epsilon)
             return true;
-        float max_val_x = std::max(std::abs(x), std::abs(x2));
-        float max_val_y = std::max(std::abs(y), std::abs(y2));
+        T max_val_x = std::max(std::abs(x), std::abs(x2));
+        T max_val_y = std::max(std::abs(y), std::abs(y2));
         return (std::abs(x-x2) < epsilon*max_val_x && std::abs(y-y2) < epsilon*max_val_y);
     }
 };

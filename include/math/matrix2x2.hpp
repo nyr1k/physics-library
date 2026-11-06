@@ -2,6 +2,9 @@
 
 #include <concepts>
 #include <array>
+#include <type_traits>
+#include <cmath>
+#include <cstddef>
 
 #include "vector2d.hpp"
 
@@ -9,18 +12,22 @@
 namespace physm {
 
 template <typename T>
+concept AllowedTypesMatrix = std::same_as<T, float> || std::same_as<T, int>;
+
+template <AllowedTypesMatrix T>
 class Matrix2 {
     private:
         std::array<T, 4> matrix; 
 
     public:
+        constexpr Matrix2() : matrix{} {}
         constexpr Matrix2(const T val) : matrix{val, val, val, val} {}
 
         /*Change the third argument to false, 
             if you want to append  vectors as columns*/
-        constexpr Matrix2(const physm::Vector2<T>& v1, const physm::Vector2<T>& v2, bool row = true) 
+        constexpr Matrix2(const physm::Vector2<T>& v1, const physm::Vector2<T>& v2, bool ConstructAsRows = true) 
         {
-            if (row)
+            if (ConstructAsRows)
                 matrix = {v1.x, v1.y, v2.x, v2.y};
             else
                 matrix = {v1.x, v2.x, v1.y, v2.y};
@@ -118,7 +125,8 @@ class Matrix2 {
         {
             if constexpr (std::is_floating_point_v<T>) 
                 return equal_float(mat);
-            return equal_int(mat);
+            else
+                return equal_int(mat);
         }
 
         //Determinant
@@ -126,12 +134,6 @@ class Matrix2 {
         {
             return matrix[0]*matrix[3] - matrix[1]*matrix[2]; //ad-cb
         } 
-  
-        //Return an Inverse Matrix
-        inline static constexpr Matrix2 identity = Matrix2(
-            physm::Vector2<T>(T{1}, T{0}),
-            physm::Vector2<T>(T{0}, T{1})
-        );
 
         //Transpose
         constexpr Matrix2 trans() const 
@@ -142,25 +144,45 @@ class Matrix2 {
             );
         }        
 
-        //Inverse
+        //Inverse is allowed for float Matrices only
+        template <typename U = T>
+        requires std::same_as<U, float> && std::same_as<U, T>   
         constexpr Matrix2 inverse() const
         {
-            T inv_det = T{1}/this->det();
+            float inv_det = 1.0f/this->det();
             return Matrix2(
-                physm::Vector2<T>(matrix[3]*inv_det, (-matrix[1])*inv_det),
-                physm::Vector2<T>((-matrix[2])*inv_det, matrix[0]*inv_det)
+                physm::Vector2<float>(matrix[3]*inv_det, (-matrix[1])*inv_det),
+                physm::Vector2<float>((-matrix[2])*inv_det, matrix[0]*inv_det)
             );
         }
 
-    private:
-        bool equal_float(Matrix2& m2, float epsilon = 1e-6f) const
+        //Return an Inverse Matrix
+        static constexpr Matrix2 identity()
         {
-            auto is_equal = [epsilon](float a, float b) 
+            return Matrix2(
+                Vector2<T>{T{1}, T{0}},
+                Vector2<T>{T{0}, T{1}}
+            );
+        }
+
+        /*Set a different epsilon for equality check (default = 1e-6f)
+            Works only for Matrix2<float> */
+        static void set_epsilon(float new_epsilon)
+        {
+            epsilon = new_epsilon;
+        }
+
+    private:
+        static inline float epsilon = 1e-6f;
+
+        bool equal_float(const Matrix2& m2) const
+        {
+            auto is_equal = [](T a, T b) 
             {
                 if (std::abs(a-b) < epsilon)
                     return true;
                 
-                float max_val = std::max(std::abs(a), std::abs(b));
+                T max_val = std::max(std::abs(a), std::abs(b));
                 return std::abs(a-b) < epsilon*max_val;
             };
 
@@ -170,7 +192,7 @@ class Matrix2 {
                     is_equal(matrix[3], m2[1][1]));
         }
 
-        bool equal_int(Matrix2& m2) const
+        bool equal_int(const Matrix2& m2) const
         {
             return (matrix[0] == m2[0][0] &&
                     matrix[1] == m2[0][1] &&
