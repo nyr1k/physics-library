@@ -6,88 +6,180 @@
 #include "vector2d.hpp"
 
 
-namespace physm::mat {
+namespace physm {
 
-    template <typename T>
-    concept AllowedTypes = std::same_as<T, int> || std::same_as<T, float>;
+template <typename T>
+class Matrix2 {
+    private:
+        std::array<T, 4> matrix; 
 
+    public:
+        constexpr Matrix2(const T val) : matrix{val, val, val, val} {}
 
-    template <AllowedTypes T>
-    class Matrix2 {
-        private:
-            std::array<T, 4> matrix; 
+        /*Change the third argument to false, 
+            if you want to append  vectors as columns*/
+        constexpr Matrix2(const physm::Vector2<T>& v1, const physm::Vector2<T>& v2, bool row = true) 
+        {
+            if (row)
+                matrix = {v1.x, v1.y, v2.x, v2.y};
+            else
+                matrix = {v1.x, v2.x, v1.y, v2.y};
+        }
 
-        public:
-            Matrix2(const T val) : matrix{val, val, val, val} {}
+        //matrix[row][col] = val
+        T* operator[](size_t row)
+        {
+            return &matrix[row*2];
+        }
 
-            /*Change the third argument to false, 
-                if you want to append  vectors as columns*/
-            Matrix2(const physm::vec::Vector2<T>& v1, const physm::vec::Vector2<T>& v2, bool row = true) 
+        //val = matrix[row][col]
+        const T* operator[](size_t row) const
+        {
+            return &matrix[row*2];
+        }
+
+        //Matrix addition
+        Matrix2 operator+(const Matrix2& add_mat) const
+        {
+            return Matrix2(
+                physm::Vector2<T>(
+                    matrix[0]+add_mat[0][0],
+                    matrix[1]+add_mat[0][1]
+                ),
+                physm::Vector2<T>(
+                    matrix[2]+add_mat[1][0],
+                    matrix[3]+add_mat[1][1]
+                )
+            );
+        }
+
+        //Matrix subtraction
+        Matrix2 operator-(const Matrix2& sub_mat) const
+        {
+            return Matrix2(
+                physm::Vector2<T>(
+                    matrix[0]-sub_mat[0][0],
+                    matrix[1]-sub_mat[0][1]
+                ),
+                physm::Vector2<T>(
+                    matrix[2]-sub_mat[1][0],
+                    matrix[3]-sub_mat[1][1]
+                )
+            );
+        }
+
+        //Matrix Matrix multiplication
+        Matrix2 operator*(const Matrix2& mult_mat) const
+        {
+            return Matrix2(
+                physm::Vector2<T>(
+                    matrix[0]*mult_mat[0][0] + matrix[1]*mult_mat[1][0],
+                    matrix[0]*mult_mat[0][1] + matrix[1]*mult_mat[1][1]
+                ),
+                physm::Vector2<T>(
+                    matrix[2]*mult_mat[0][0] + matrix[3]*mult_mat[1][0],
+                    matrix[2]*mult_mat[0][1] + matrix[3]*mult_mat[1][1]
+                )
+            );
+        }
+
+        //Matrix Vector multiplication
+        physm::Vector2<T> operator*(const physm::Vector2<T>& mult_vec) const
+        {
+            return physm::Vector2<T>(
+                    matrix[0]*mult_vec.x + matrix[1]*mult_vec.y, // x
+                    matrix[2]*mult_vec.x + matrix[3]*mult_vec.y // y
+            );
+        }
+
+        //Compound scalar multiplication
+        Matrix2& operator*=(const T val) 
+        {
+            matrix[0] *= val;
+            matrix[1] *= val;
+            matrix[2] *= val;
+            matrix[3] *= val;
+        
+            return *this;
+        }
+
+        //Compound scalar division
+        Matrix2& operator/=(const T val) 
+        {
+            matrix[0] /= val;
+            matrix[1] /= val;
+            matrix[2] /= val;
+            matrix[3] /= val;
+        
+            return *this;
+        }
+
+        bool operator==(const Matrix2& mat) const
+        {
+            if constexpr (std::is_floating_point_v<T>) 
+                return equal_float(mat);
+            return equal_int(mat);
+        }
+
+        //Determinant
+        constexpr T det() const
+        {
+            return matrix[0]*matrix[3] - matrix[1]*matrix[2]; //ad-cb
+        } 
+  
+        //Return an Inverse Matrix
+        inline static constexpr Matrix2 identity = Matrix2(
+            physm::Vector2<T>(T{1}, T{0}),
+            physm::Vector2<T>(T{0}, T{1})
+        );
+
+        //Transpose
+        constexpr Matrix2 trans() const 
+        {
+            return Matrix2(
+                physm::Vector2<T>(matrix[0], matrix[2]),
+                physm::Vector2<T>(matrix[1], matrix[3])
+            );
+        }        
+
+        //Inverse
+        constexpr Matrix2 inverse() const
+        {
+            T inv_det = T{1}/this->det();
+            return Matrix2(
+                physm::Vector2<T>(matrix[3]*inv_det, (-matrix[1])*inv_det),
+                physm::Vector2<T>((-matrix[2])*inv_det, matrix[0]*inv_det)
+            );
+        }
+
+    private:
+        bool equal_float(Matrix2& m2, float epsilon = 1e-6f) const
+        {
+            auto is_equal = [epsilon](float a, float b) 
             {
-                if (row)
-                    matrix = {v1.x, v1.y, v2.x, v2.y};
-                else
-                    matrix = {v1.x, v2.x, v1.y, v2.y};
-            }
-            
-            //matrix[row][col] = val
-            T* operator[](size_t row)
-            {
-                return &matrix[row*2];
-            }
+                if (std::abs(a-b) < epsilon)
+                    return true;
+                
+                float max_val = std::max(std::abs(a), std::abs(b));
+                return std::abs(a-b) < epsilon*max_val;
+            };
 
-            //val = matrix[row][col]
-            const T* operator[](size_t row) const
-            {
-                return &matrix[row*2];
-            }
+            return (is_equal(matrix[0], m2[0][0]) &&
+                    is_equal(matrix[1], m2[0][1]) &&
+                    is_equal(matrix[2], m2[1][0]) &&
+                    is_equal(matrix[3], m2[1][1]));
+        }
 
-            //Matrix addition
-            Matrix2 operator+(const Matrix2& add_mat) const
-            {
-                return Matrix2(
-                    physm::vec::Vector2<T>(
-                        matrix[0]+add_mat[0][0],
-                        matrix[1]+add_mat[0][1]
-                    ),
-                    physm::vec::Vector2<T>(
-                        matrix[2]+add_mat[1][0],
-                        matrix[3]+add_mat[1][1]
-                    )
-                );
-            }
+        bool equal_int(Matrix2& m2) const
+        {
+            return (matrix[0] == m2[0][0] &&
+                    matrix[1] == m2[0][1] &&
+                    matrix[2] == m2[1][0] &&
+                    matrix[3] == m2[1][1]);
+        }
+};
 
-            //Matrix subtraction
-            Matrix2 operator-(const Matrix2& add_mat) const
-            {
-                return Matrix2(
-                    physm::vec::Vector2<T>(
-                        matrix[0]-add_mat[0][0],
-                        matrix[1]-add_mat[0][1]
-                    ),
-                    physm::vec::Vector2<T>(
-                        matrix[2]-add_mat[1][0],
-                        matrix[3]-add_mat[1][1]
-                    )
-                );
-            }
+using mat2f = Matrix2<float>;
+using mat2i = Matrix2<int>;
 
-            //Matrix multiplication
-            Matrix2 operator*(const Matrix2& add_mat) const
-            {
-                return Matrix2(
-                    physm::vec::Vector2<T>(
-                        matrix[0]*add_mat[0][0] + matrix[1]*add_mat[1][0],
-                        matrix[0]*add_mat[0][1] + matrix[1]*add_mat[1][1]
-                    ),
-                    physm::vec::Vector2<T>(
-                        matrix[2]*add_mat[0][0] + matrix[3]*add_mat[1][0],
-                        matrix[2]*add_mat[0][1] + matrix[3]*add_mat[1][1]
-                    )
-                );
-            }
-    };
-
-    using mat2 = Matrix2<float>;
-    using mat2i = Matrix2<int>;
 }
