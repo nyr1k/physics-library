@@ -257,18 +257,3 @@ void vector_cross()
     res_f = cross(v1f, v2f);
     assert(res_f == 0.0f);
 }
-
-int main() 
-{
-    vector_addition();
-    vector_subtraction();
-    vector_mult_scalar();
-    vector_div_scalar();
-    vector_neg();
-    vector_equal();
-    vector_length();
-    vector_squared_length();
-    vector_normalize();
-    vector_dot();
-    vector_cross();
-}

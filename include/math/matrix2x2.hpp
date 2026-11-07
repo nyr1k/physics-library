@@ -110,7 +110,22 @@ class Matrix2 {
             return *this;
         }
 
-        //Compound scalar division
+        //Scalar multiplication (Scalar is on the right)
+        Matrix2 operator*(const T val) const
+        {
+            Matrix2 mat = *this;
+            mat *= val;
+            return mat;
+        }
+
+        //Scalar multiplication (Scalar is on the left)
+        friend Matrix2 operator*(const T val, const Matrix2& mat) 
+        {
+            return mat*val;
+        }
+
+        /*Compound scalar division
+            Scalar should not be zero */
         Matrix2& operator/=(const T val) 
         {
             matrix[0] /= val;
@@ -119,6 +134,15 @@ class Matrix2 {
             matrix[3] /= val;
         
             return *this;
+        }
+
+        /*Scalar division (Scalar is on the right)
+            Scalar should not be zero */
+        Matrix2 operator/(const T val) const
+        {
+            Matrix2 mat = *this;
+            mat /= val;
+            return mat;
         }
 
         bool operator==(const Matrix2& mat) const
@@ -156,7 +180,7 @@ class Matrix2 {
             );
         }
 
-        //Return an Inverse Matrix
+        //Return an Identity Matrix
         static constexpr Matrix2 identity()
         {
             return Matrix2(
@@ -203,5 +227,4 @@ class Matrix2 {
 
 using mat2f = Matrix2<float>;
 using mat2i = Matrix2<int>;
-
 }

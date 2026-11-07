@@ -1,8 +1,9 @@
+// TODO: add epsilon configuration 
+
 #pragma once
 
 #include <concepts>
 #include <cmath>
-#include <cassert>
 #include <type_traits>
 
 
@@ -51,18 +52,30 @@ public:
         return *this;
     }
 
-    //Multiplies vector by a scalar
+    //Multiplies vector by a scalar (Scalar on the right)
     Vector2 operator*(const T scalar) const
     {
         return Vector2(x * scalar, y * scalar);
     }
 
-    /*Divides vector by a scalar.
+    //Multiplies vector by a scalar (Scalar on the left)
+    friend Vector2 operator*(const T scalar, const Vector2& vec) 
+    {
+        return vec*scalar;
+    }
+
+    /*Divides vector by a scalar (Scalar on the right)
         Scalar should not be equal to zero.*/
     Vector2 operator/(const T scalar) const
     {
-        assert(scalar != T{0});
         return Vector2(x / scalar, y / scalar);
+    }
+
+    /*Divides vector by a scalar (Scalar on the right)
+        Scalar should not be equal to zero.*/
+    friend Vector2 operator/(const T scalar, const Vector2& vec) 
+    {
+        return vec/scalar;
     }
 
     // Unary negation
@@ -101,7 +114,6 @@ public:
     friend Vector2<float> normalize(const Vector2<T>& vector)  
     {
         float len = vector.length();
-        assert(len != T{0});
         return Vector2<float>(
             static_cast<float>(vector.x)/len, 
             static_cast<float>(vector.y)/len);
@@ -117,6 +129,13 @@ public:
     friend T cross(const Vector2& v1, const Vector2& v2)
     {
         return (v1.x*v2.y) - (v1.y*v2.x);
+    }
+
+    /*Set a different epsilon for equality check (default = 1e-6f)
+        Works only for Vector2<float> */
+    static void set_epsilon(float new_epsilon)
+    {
+        epsilon = new_epsilon;
     }
 
 private:

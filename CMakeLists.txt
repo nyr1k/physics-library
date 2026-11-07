@@ -25,5 +25,7 @@ target_compile_options(phys_lib INTERFACE
 add_executable(phys_sim main.cpp)
 target_link_libraries(phys_sim PRIVATE phys_lib)
 
-add_executable(phys_unit tests/vector2d_test.cpp)
+add_executable(phys_unit 
+    tests/test.cpp
+)
 target_link_libraries(phys_unit PRIVATE phys_lib)
